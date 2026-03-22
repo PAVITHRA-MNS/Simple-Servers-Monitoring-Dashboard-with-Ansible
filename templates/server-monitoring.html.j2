@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server Monitoring Dashboard</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #ffffff;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(90deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 100%;
+            padding: 20px;
+        }
+
+        .cards {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            flex: 1;
+            min-width: 45%;
+            border-radius: 15px;
+            padding: 20px;
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* Gradient cards */
+        .card:nth-child(1) {
+            background: linear-gradient(135deg, #fdfbfb, #ebedee);
+        }
+
+        .card:nth-child(2) {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .cpu {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .mem {
+            color: #2980b9;
+            font-weight: bold;
+        }
+
+        .section-title {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .users {
+            color: #27ae60;
+        }
+
+        .patches {
+            color: #8e44ad;
+        }
+
+        canvas {
+            max-width: 250px;
+            margin: 10px auto;
+            display: block;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        🚀 Server Monitoring Dashboard
+        <div>👩‍💻 Pavithra</div>
+    </div>
+
+    <div class="container">
+        <div class="cards">
+
+        {% for host in groups['all'] %}
+            <div class="card">
+
+                <h2>{{ host }}</h2>
+
+                <p class="cpu">CPU Usage: {{ hostvars[host].report_data.cpu }}%</p>
+                <p class="mem">Memory Usage: {{ hostvars[host].report_data.memory }} MB</p>
+
+                <!-- CPU Doughnut Chart -->
+                <canvas id="cpu_chart_{{ loop.index }}"></canvas>
+
+                <!-- Memory Bar Chart -->
+                <canvas id="mem_chart_{{ loop.index }}"></canvas>
+
+                <!-- Users -->
+                <div class="section-title users">👥 Users</div>
+                <ul>
+                    {% for user in hostvars[host].report_data.users %}
+                        <li>{{ user }}</li>
+                    {% endfor %}
+                </ul>
+
+                <!-- Patches -->
+                <div class="section-title patches">🛠 Patches</div>
+                <ul>
+                    {% for patch in hostvars[host].report_data.patches[:5] %}
+                        <li>{{ patch }}</li>
+                    {% endfor %}
+                </ul>
+
+            </div>
+
+            <script>
+                // CPU Doughnut
+                new Chart(document.getElementById('cpu_chart_{{ loop.index }}'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Used', 'Free'],
+                        datasets: [{
+                            data: [
+                                {{ hostvars[host].report_data.cpu }},
+                                100 - {{ hostvars[host].report_data.cpu }}
+                            ],
+                            backgroundColor: ['#e74c3c', '#ecf0f1']
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+
+                // Memory Bar
+                new Chart(document.getElementById('mem_chart_{{ loop.index }}'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Memory'],
+                        datasets: [{
+                            label: 'MB Used',
+                            data: [{{ hostvars[host].report_data.memory }}],
+                            backgroundColor: '#3498db'
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            </script>
+
+        {% endfor %}
+
+        </div>
+    </div>
+
+</body>
+</html>
