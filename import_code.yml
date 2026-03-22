@@ -1,0 +1,9 @@
+- name: Generate dashboard
+  hosts: lampweb
+  become: yes
+
+  tasks:
+    - name: Deploy HTML dashboard
+      template:
+        src: server-monitoring.html.j2
+        dest: /var/www/html/index.html
