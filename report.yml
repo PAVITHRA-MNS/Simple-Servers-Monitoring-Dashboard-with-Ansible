@@ -1,0 +1,31 @@
+- name: Collect system data
+  hosts: all
+  become: yes
+
+  tasks:
+
+    - name: Get user list
+      shell: "awk -F: '$3 >= 1000 && $1 != \"nobody\" && $7 !~ /nologin|false/ {print $1}' /etc/passwd"
+      register: user_output
+
+    - name: Get patch list (RHEL)
+      command: dnf check-update
+      register: patch_output
+      failed_when: false
+      changed_when: false
+
+    - name: Get CPU usage
+      shell: "top -bn1 | grep 'Cpu(s)' | awk '{print 100 - $8}'"
+      register: cpu_output
+
+    - name: Get memory usage
+      shell: "free -m | awk '/Mem:/ {print $3}'"
+      register: mem_output
+
+    - name: Save structured data
+      set_fact:
+        report_data:
+          users: "{{ user_output.stdout_lines }}"
+          patches: "{{ patch_output.stdout_lines }}"
+          cpu: "{{ cpu_output.stdout | int }}"
+          memory: "{{ mem_output.stdout | int }}"
